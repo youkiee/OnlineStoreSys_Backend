@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # MySQL数据库服务
+  mysql:
+    image: mysql:8.0
+    container_name: online-store-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: DB_OnlineStoreSys
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    command: 
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=+08:00
+    networks:
+      - onlinestoresys
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    # 为服务设置别名（可选）
+    hostname: mysql-server
+
+  # Redis缓存服务
+  redis:
+    image: redis:7-alpine
+    container_name: online-store-redis
+    command: redis-server --requirepass 123456
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      - onlinestoresys
+    restart: unless-stopped
+    # 为服务设置别名（可选）
+    hostname: redis-server
+
+  # 应用服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: online-store-backend
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      TZ: Asia/Shanghai
+      # 可以添加其他环境变量
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/DB_OnlineStoreSys?serverTimezone=GMT%2b8&useSSL=false
+      SPRING_REDIS_HOST: redis
+    volumes:
+      - ./logs:/app/logs
+      - ./uploads:/app/uploads
+      - ./application-docker.yml:/app/config/application.yml
+    networks:
+      - onlinestoresys
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    # 为服务设置别名（可选）
+    hostname: backend-server
+
+networks:
+  onlinestoresys:
+    external: true  # 使用外部已创建的网络
+
+volumes:
+  mysql_data:
+  redis_data:
