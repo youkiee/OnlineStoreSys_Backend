@@ -1,5 +1,5 @@
 # 使用官方OpenJDK 8作为基础镜像
-FROM openjdk:8u141
+FROM crpi-3y0hsxppovv5xhz1.cn-chengdu.personal.cr.aliyuncs.com/youkiee/openjdk:8u141
 
 # 设置工作目录
 WORKDIR /app
