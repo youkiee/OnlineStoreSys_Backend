@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL数据库服务
   mysql:
@@ -15,7 +13,7 @@ services:
       - mysql_data:/var/lib/mysql
       - ./mysql/conf.d:/etc/mysql/conf.d
       - ./mysql/init:/docker-entrypoint-initdb.d
-    command: 
+    command:
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
       --default-time-zone=+08:00
@@ -45,11 +43,9 @@ services:
     # 为服务设置别名（可选）
     hostname: redis-server
 
-  # 应用服务
+  # 应用服务 - 使用指定镜像
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: crpi-3y0hsxppovv5xhz1.cn-chengdu.personal.cr.aliyuncs.com/youkiee/onlinestore_backend:v1.0
     container_name: online-store-backend
     depends_on:
       mysql:
